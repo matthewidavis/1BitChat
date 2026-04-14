@@ -64,7 +64,7 @@ Truly, we live in an age of wonders.
 
 ### §1.1  Unpacking Your Unit
 
-Locate the file `1BitChat.zip` in your possession. Using the File
+Locate the file [`1BitChat.zip`](https://github.com/matthewidavis/1BitChat/releases/latest/download/1BitChat.zip) in your possession. Using the File
 Compression Utility of your choice (Windows Explorer, 7-Zip, WinRAR,
 or for the traditionalists, PKUNZIP.EXE), extract the archive to any
 location on your fixed disk. A folder named `1BitChat` will be produced.
