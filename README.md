@@ -243,7 +243,7 @@ modification, except for the Base URL.
 REM  Prerequisites: Python 3.9+ and, optionally, an attention span
 pip install pyinstaller pywebview psutil pillow
 
-python make_icon.py
+python scripts/make_icon.py
 
 pyinstaller --onefile --windowed --name 1BitChat ^
   --icon 1BitChat.ico ^
@@ -254,6 +254,28 @@ pyinstaller --onefile --windowed --name 1BitChat ^
 
 The output [`1BitChat.exe`](https://github.com/matthewidavis/1BitChat/releases/latest/download/1BitChat.zip) (approximately 17 MB) may be placed beside
 `build/bin/` and executed forthwith.
+
+### §5.1  Running from Source on Linux / macOS
+
+No prebuilt binary is provided for non-Windows systems; the Python code
+itself is portable and runs happily on any platform with Python 3.9+ and
+a native `llama-server` binary.
+
+```sh
+# 1. Install Python dependencies
+pip install -r requirements.txt
+
+# 2. Build llama-server for your platform (follow upstream instructions)
+#    https://github.com/microsoft/BitNet
+#    Place the resulting binary at:  build/bin/llama-server
+
+# 3. Launch
+./run.sh
+```
+
+The BitNet-2B model will be auto-downloaded from HuggingFace on first run
+(~1.2 GB) into `models/BitNet-b1.58-2B-4T/`. The native window is provided
+by pywebview (GTK on Linux, Cocoa on macOS).
 
 ---
 
