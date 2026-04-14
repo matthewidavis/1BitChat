@@ -67,7 +67,7 @@ Truly, we live in an age of wonders.
 Locate the file [`1BitChat.zip`](https://github.com/matthewidavis/1BitChat/releases/latest/download/1BitChat.zip) in your possession. Using the File
 Compression Utility of your choice (Windows Explorer, 7-Zip, WinRAR,
 or for the traditionalists, PKUNZIP.EXE), extract the archive to any
-location on your fixed disk. A folder named `1BitChat` will be produced.
+location on your fixed disk. A folder named [`1BitChat`](https://github.com/matthewidavis/1BitChat/releases/latest/download/1BitChat.zip) will be produced.
 
 ```
   WinZip for Windows 95                              [_][□][X]
@@ -83,7 +83,7 @@ location on your fixed disk. A folder named `1BitChat` will be produced.
 
 ### §1.2  Energizing the Unit
 
-Navigate into the `1BitChat` folder and locate `1BitChat.exe`. Place the
+Navigate into the [`1BitChat`](https://github.com/matthewidavis/1BitChat/releases/latest/download/1BitChat.zip) folder and locate [`1BitChat.exe`](https://github.com/matthewidavis/1BitChat/releases/latest/download/1BitChat.zip). Place the
 mouse pointer upon this icon and **actuate the left button twice in
 rapid succession** (colloquially: "double-click").
 
@@ -252,7 +252,7 @@ pyinstaller --onefile --windowed --name 1BitChat ^
   chat-ui/server.py
 ```
 
-The output `1BitChat.exe` (approximately 17 MB) may be placed beside
+The output [`1BitChat.exe`](https://github.com/matthewidavis/1BitChat/releases/latest/download/1BitChat.zip) (approximately 17 MB) may be placed beside
 `build/bin/` and executed forthwith.
 
 ---
