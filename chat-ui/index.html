@@ -1,0 +1,943 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>1BitChat</title>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --bg: #0f0f0f;
+    --surface: #1a1a1a;
+    --surface2: #242424;
+    --border: #333;
+    --text: #e8e8e8;
+    --text-muted: #888;
+    --accent: #6c63ff;
+    --accent-hover: #7e76ff;
+    --user-bg: #2a2745;
+    --bot-bg: #1e1e1e;
+  }
+
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    height: 100vh;
+    display: flex;
+    flex-direction: column;
+  }
+
+  header {
+    padding: 12px 24px;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    background: var(--surface);
+    flex-wrap: wrap;
+  }
+
+  header h1 { font-size: 18px; font-weight: 600; }
+
+  .model-switcher {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .model-switcher select {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 6px 12px;
+    color: var(--text);
+    font-size: 13px;
+    font-family: inherit;
+    outline: none;
+    cursor: pointer;
+  }
+
+  .model-switcher select:focus { border-color: var(--accent); }
+
+  .model-info {
+    font-size: 11px;
+    color: var(--text-muted);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .model-info .tag {
+    padding: 2px 8px;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+  }
+
+  header .status {
+    margin-left: auto;
+    font-size: 12px;
+    color: var(--text-muted);
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+
+  header .status .dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: #4caf50;
+  }
+
+  header .status .dot.offline { background: #f44336; }
+  header .status .dot.generating { background: #ff9800; animation: pulse 1s infinite; }
+  header .status .dot.loading { background: #2196f3; animation: pulse 0.6s infinite; }
+
+  @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.4; } }
+
+  .loading-overlay {
+    position: fixed;
+    top: 0; left: 0; right: 0; bottom: 0;
+    background: rgba(0,0,0,0.7);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 100;
+  }
+
+  .loading-overlay.hidden { display: none; }
+
+  .loading-box {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 32px 48px;
+    text-align: center;
+  }
+
+  .loading-box h3 { margin-bottom: 8px; font-size: 16px; }
+  .loading-box p { color: var(--text-muted); font-size: 13px; }
+
+  .spinner {
+    width: 32px; height: 32px;
+    border: 3px solid var(--border);
+    border-top-color: var(--accent);
+    border-radius: 50%;
+    animation: spin 0.8s linear infinite;
+    margin: 0 auto 16px;
+  }
+
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  #chat {
+    flex: 1;
+    overflow-y: auto;
+    padding: 24px;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+  }
+
+  .message {
+    max-width: 720px;
+    width: 100%;
+    margin: 0 auto;
+    display: flex;
+    gap: 12px;
+  }
+
+  .message .avatar {
+    width: 32px;
+    height: 32px;
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 14px;
+    flex-shrink: 0;
+    font-weight: 600;
+  }
+
+  .message.user .avatar { background: var(--accent); }
+  .message.bot .avatar { background: var(--surface2); border: 1px solid var(--border); }
+
+  .message .content {
+    padding: 12px 16px;
+    border-radius: 12px;
+    line-height: 1.6;
+    font-size: 14px;
+    white-space: pre-wrap;
+    word-break: break-word;
+  }
+
+  .message.user .content { background: var(--user-bg); }
+  .message.bot .content { background: var(--bot-bg); border: 1px solid var(--border); }
+
+  .message .content .cursor {
+    display: inline-block;
+    width: 2px;
+    height: 16px;
+    background: var(--accent);
+    animation: blink 0.8s infinite;
+    vertical-align: text-bottom;
+    margin-left: 1px;
+  }
+
+  @keyframes blink { 0%, 100% { opacity: 1; } 50% { opacity: 0; } }
+
+  .stats {
+    font-size: 11px;
+    color: var(--text-muted);
+    margin-top: 8px;
+  }
+
+  #input-area {
+    padding: 16px 24px 24px;
+    border-top: 1px solid var(--border);
+    background: var(--surface);
+  }
+
+  #input-area form {
+    max-width: 720px;
+    margin: 0 auto;
+    display: flex;
+    gap: 8px;
+  }
+
+  #input-area textarea {
+    flex: 1;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 12px 16px;
+    color: var(--text);
+    font-size: 14px;
+    font-family: inherit;
+    resize: none;
+    outline: none;
+    min-height: 48px;
+    max-height: 200px;
+    line-height: 1.5;
+  }
+
+  #input-area textarea:focus { border-color: var(--accent); }
+  #input-area textarea::placeholder { color: var(--text-muted); }
+
+  #input-area button {
+    background: var(--accent);
+    border: none;
+    border-radius: 12px;
+    padding: 0 20px;
+    color: white;
+    font-size: 14px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: background 0.15s;
+    white-space: nowrap;
+  }
+
+  #input-area button:hover { background: var(--accent-hover); }
+  #input-area button:disabled { opacity: 0.5; cursor: not-allowed; }
+
+  #clear-btn {
+    background: transparent;
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 0 14px;
+    color: var(--text-muted);
+    font-size: 13px;
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+
+  #clear-btn:hover { border-color: var(--text-muted); color: var(--text); }
+
+  .welcome {
+    text-align: center;
+    color: var(--text-muted);
+    margin: auto;
+    max-width: 400px;
+  }
+
+  .welcome h2 { font-size: 20px; color: var(--text); margin-bottom: 8px; }
+  .welcome p { font-size: 14px; line-height: 1.6; }
+
+  /* Settings modal */
+  .gear-btn {
+    background: transparent; border: 1px solid var(--border); border-radius: 8px;
+    padding: 6px 10px; color: var(--text); cursor: pointer; font-size: 13px;
+  }
+  .gear-btn:hover { border-color: var(--accent); color: var(--accent); }
+
+  .current-model-label { font-size: 12px; color: var(--text-muted); }
+
+  .modal-backdrop {
+    position: fixed; inset: 0; background: rgba(0,0,0,0.6);
+    display: none; align-items: center; justify-content: center; z-index: 200;
+  }
+  .modal-backdrop.open { display: flex; }
+  .modal {
+    background: var(--surface); border: 1px solid var(--border); border-radius: 16px;
+    width: min(640px, 92vw); max-height: 86vh; overflow-y: auto;
+    padding: 24px;
+  }
+  .modal h2 { font-size: 18px; margin-bottom: 16px; }
+  .modal h3 {
+    font-size: 13px; text-transform: uppercase; letter-spacing: 0.05em;
+    color: var(--text-muted); margin: 20px 0 10px;
+  }
+  .modal .row { display: flex; align-items: center; gap: 10px; margin-bottom: 10px; }
+  .modal label { font-size: 13px; }
+  .modal input[type=text], .modal input[type=number], .modal select {
+    background: var(--surface2); border: 1px solid var(--border); border-radius: 8px;
+    padding: 8px 10px; color: var(--text); font-size: 13px; font-family: inherit;
+    outline: none; flex: 1; min-width: 0;
+  }
+  .modal input:focus, .modal select:focus { border-color: var(--accent); }
+  .modal .btn {
+    background: var(--accent); border: none; border-radius: 8px;
+    padding: 8px 14px; color: white; font-size: 13px; cursor: pointer;
+  }
+  .modal .btn.secondary { background: var(--surface2); border: 1px solid var(--border); color: var(--text); }
+  .modal .btn:hover { filter: brightness(1.1); }
+  .modal .btn:disabled { opacity: 0.5; cursor: not-allowed; }
+  .nic-list { display: flex; flex-direction: column; gap: 6px; }
+  .nic-row {
+    display: flex; align-items: center; gap: 10px; padding: 8px 10px;
+    background: var(--surface2); border: 1px solid var(--border); border-radius: 8px;
+    font-size: 13px;
+  }
+  .nic-row .nic-name { font-weight: 500; }
+  .nic-row .nic-ip { color: var(--text-muted); font-family: monospace; }
+  .nic-row .nic-tag {
+    font-size: 10px; text-transform: uppercase; padding: 1px 6px;
+    border: 1px solid var(--border); border-radius: 4px; color: var(--text-muted);
+  }
+  .nic-row.down { opacity: 0.55; }
+  .snippet {
+    background: var(--bg); border: 1px solid var(--border); border-radius: 8px;
+    padding: 10px 12px; font-family: monospace; font-size: 12px;
+    color: var(--text); white-space: pre-wrap; word-break: break-all;
+  }
+  .warn {
+    background: rgba(255,152,0,0.08); border: 1px solid rgba(255,152,0,0.35);
+    color: #ffb74d; padding: 8px 12px; border-radius: 8px; font-size: 12px;
+    margin-top: 8px;
+  }
+  .modal-footer {
+    display: flex; justify-content: flex-end; gap: 8px; margin-top: 24px;
+    padding-top: 16px; border-top: 1px solid var(--border);
+  }
+
+  .model-row {
+    display: flex; align-items: center; gap: 10px; padding: 10px 12px;
+    background: var(--surface2); border: 1px solid var(--border); border-radius: 8px;
+    font-size: 13px; margin-bottom: 6px;
+  }
+  .model-row .mr-info { flex: 1; min-width: 0; }
+  .model-row .mr-name { font-weight: 500; }
+  .model-row .mr-meta { font-size: 11px; color: var(--text-muted); margin-top: 2px; }
+  .model-row .mr-status {
+    padding: 2px 8px; border-radius: 6px; font-size: 11px;
+    background: rgba(76,175,80,0.15); color: #81c784; border: 1px solid rgba(76,175,80,0.3);
+  }
+  .model-row .mr-status.downloading { background: rgba(33,150,243,0.15); color: #64b5f6; border-color: rgba(33,150,243,0.3); }
+  .model-row .mr-status.error { background: rgba(244,67,54,0.15); color: #e57373; border-color: rgba(244,67,54,0.3); }
+  .progress {
+    height: 4px; background: var(--border); border-radius: 2px; margin-top: 6px; overflow: hidden;
+  }
+  .progress .bar { height: 100%; background: var(--accent); transition: width 0.3s; }
+</style>
+</head>
+<body>
+
+<header>
+  <h1>1BitChat</h1>
+  <div class="model-info">
+    <span class="tag" id="active-model">—</span>
+    <span class="tag" id="model-ctx"></span>
+  </div>
+  <div class="status">
+    <div class="dot" id="status-dot"></div>
+    <span id="status-text">Connecting...</span>
+    <button class="gear-btn" id="gear-btn" title="Settings">⚙</button>
+  </div>
+</header>
+
+<div class="modal-backdrop" id="settings-modal">
+  <div class="modal">
+    <h2>Settings</h2>
+
+    <h3>Models</h3>
+    <div id="model-rows"></div>
+
+    <h3>External API access</h3>
+    <div class="row">
+      <input type="checkbox" id="api-enabled">
+      <label for="api-enabled">Expose OpenAI-compatible API to selected network interfaces</label>
+    </div>
+    <div class="row">
+      <label style="width:80px">Port</label>
+      <input type="number" id="api-port" min="1" max="65535" value="8080" style="max-width:120px">
+    </div>
+    <div class="row">
+      <label style="width:80px">API key</label>
+      <input type="text" id="api-key" placeholder="(none — unauthenticated)">
+      <button class="btn secondary" id="gen-key">Generate</button>
+    </div>
+
+    <h3>Network interfaces</h3>
+    <div class="nic-list" id="nic-list"></div>
+    <div class="warn" id="lan-warn" style="display:none">
+      Unauthenticated API over LAN means anyone on the selected networks can use this model. Set an API key unless this is a trusted private network.
+    </div>
+
+    <h3>Usage</h3>
+    <div class="snippet" id="usage-snippet">Enable API access and select an interface to see usage.</div>
+
+    <div class="modal-footer">
+      <button class="btn secondary" id="close-settings">Close</button>
+      <button class="btn" id="save-settings">Save</button>
+    </div>
+  </div>
+</div>
+
+<div id="loading-overlay" class="loading-overlay hidden">
+  <div class="loading-box">
+    <div class="spinner"></div>
+    <h3 id="loading-title">Loading model...</h3>
+    <p id="loading-desc">This may take a moment</p>
+  </div>
+</div>
+
+<div id="chat">
+  <div class="welcome" id="welcome">
+    <h2>1BitChat</h2>
+    <p>1-bit LLMs running locally via BitNet.cpp<br>Type a message to start chatting.</p>
+  </div>
+</div>
+
+<div id="input-area">
+  <form id="form">
+    <textarea id="input" placeholder="Send a message..." rows="1"></textarea>
+    <button type="submit" id="send-btn">Send</button>
+    <button type="button" id="clear-btn">Clear</button>
+  </form>
+</div>
+
+<script>
+const LLAMA_API = 'http://127.0.0.1:8080';
+const MGR_API = window.location.origin;
+const chat = document.getElementById('chat');
+const input = document.getElementById('input');
+const form = document.getElementById('form');
+const sendBtn = document.getElementById('send-btn');
+const clearBtn = document.getElementById('clear-btn');
+const statusDot = document.getElementById('status-dot');
+const statusText = document.getElementById('status-text');
+const activeModelLabel = document.getElementById('active-model');
+const modelCtx = document.getElementById('model-ctx');
+const loadingOverlay = document.getElementById('loading-overlay');
+const loadingTitle = document.getElementById('loading-title');
+const loadingDesc = document.getElementById('loading-desc');
+
+const gearBtn = document.getElementById('gear-btn');
+const settingsModal = document.getElementById('settings-modal');
+const closeSettings = document.getElementById('close-settings');
+const saveSettingsBtn = document.getElementById('save-settings');
+const apiEnabled = document.getElementById('api-enabled');
+const apiPort = document.getElementById('api-port');
+const apiKey = document.getElementById('api-key');
+const genKey = document.getElementById('gen-key');
+const nicList = document.getElementById('nic-list');
+const usageSnippet = document.getElementById('usage-snippet');
+const lanWarn = document.getElementById('lan-warn');
+const modelRows = document.getElementById('model-rows');
+
+let settingsData = null;
+
+let messages = [];
+let generating = false;
+let controller = null;
+let modelsData = {};
+let currentModel = null;
+
+// Auto-resize textarea
+input.addEventListener('input', () => {
+  input.style.height = 'auto';
+  input.style.height = Math.min(input.scrollHeight, 200) + 'px';
+});
+
+input.addEventListener('keydown', (e) => {
+  if (e.key === 'Enter' && !e.shiftKey) {
+    e.preventDefault();
+    form.dispatchEvent(new Event('submit'));
+  }
+});
+
+// --- Model management ---
+
+async function fetchModels() {
+  try {
+    const res = await fetch(MGR_API + '/api/models');
+    const data = await res.json();
+    modelsData = data.models;
+    currentModel = data.current;
+    updateModelInfo();
+    updateStatus(data.server_ready);
+  } catch {
+    updateStatusDirect();
+  }
+}
+
+function updateModelInfo() {
+  const m = modelsData[currentModel];
+  if (m) {
+    activeModelLabel.textContent = m.label;
+    modelCtx.textContent = `ctx: ${m.context}`;
+  } else {
+    activeModelLabel.textContent = 'No model active';
+    modelCtx.textContent = '';
+  }
+}
+
+function updateStatus(ready) {
+  if (ready) {
+    statusDot.className = 'dot';
+    statusText.textContent = 'Online';
+  } else {
+    statusDot.className = 'dot loading';
+    statusText.textContent = 'Loading...';
+  }
+}
+
+async function updateStatusDirect() {
+  try {
+    const res = await fetch(LLAMA_API + '/health');
+    const data = await res.json();
+    if (data.status === 'ok') {
+      statusDot.className = 'dot';
+      statusText.textContent = 'Online';
+    }
+  } catch {
+    statusDot.className = 'dot offline';
+    statusText.textContent = 'Offline';
+  }
+}
+
+async function switchModel(newModel) {
+  if (!newModel || newModel === currentModel) return;
+  const m = modelsData[newModel];
+  loadingTitle.textContent = `Loading ${m.label}...`;
+  loadingDesc.textContent = 'Switching models, this may take a moment';
+  loadingOverlay.classList.remove('hidden');
+  statusDot.className = 'dot loading';
+  statusText.textContent = 'Switching...';
+
+  try {
+    await fetch(MGR_API + '/api/switch', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ model: newModel }),
+    });
+
+    let ready = false;
+    for (let i = 0; i < 120; i++) {
+      await new Promise(r => setTimeout(r, 2000));
+      try {
+        const res = await fetch(MGR_API + '/api/status');
+        const data = await res.json();
+        if (data.server_ready && data.current === newModel) { ready = true; break; }
+      } catch {}
+    }
+
+    if (ready) {
+      currentModel = newModel;
+      updateModelInfo();
+      updateStatus(true);
+      messages = [];
+      resetChat();
+    } else {
+      statusDot.className = 'dot offline';
+      statusText.textContent = 'Failed to load';
+    }
+  } catch {
+    statusDot.className = 'dot offline';
+    statusText.textContent = 'Error';
+  }
+
+  loadingOverlay.classList.add('hidden');
+}
+
+// --- Settings modal ---
+
+async function fetchSettings() {
+  const res = await fetch(MGR_API + '/api/settings');
+  settingsData = await res.json();
+  renderSettings();
+}
+
+function renderSettings() {
+  if (!settingsData) return;
+  const s = settingsData.settings;
+  apiEnabled.checked = !!s.api_enabled;
+  apiPort.value = s.api_port || 8080;
+  apiKey.value = s.api_key || '';
+  renderNics();
+  updateUsageSnippet();
+  updateWarnings();
+}
+
+function renderNics() {
+  nicList.innerHTML = '';
+  const selected = new Set(settingsData.settings.allowed_ips || []);
+  for (const n of settingsData.nics) {
+    const row = document.createElement('label');
+    row.className = 'nic-row' + (n.up ? '' : ' down');
+    const cb = document.createElement('input');
+    cb.type = 'checkbox';
+    cb.value = n.ip;
+    cb.checked = selected.has(n.ip);
+    cb.addEventListener('change', () => { updateUsageSnippet(); updateWarnings(); });
+
+    const name = document.createElement('span');
+    name.className = 'nic-name';
+    name.textContent = n.nic;
+    const ip = document.createElement('span');
+    ip.className = 'nic-ip';
+    ip.textContent = n.ip;
+    ip.style.marginLeft = 'auto';
+
+    row.appendChild(cb);
+    row.appendChild(name);
+    if (n.loopback) row.appendChild(tag('loopback'));
+    if (n.link_local) row.appendChild(tag('link-local'));
+    if (!n.up) row.appendChild(tag('down'));
+    row.appendChild(ip);
+    nicList.appendChild(row);
+  }
+}
+
+function tag(text) {
+  const t = document.createElement('span');
+  t.className = 'nic-tag';
+  t.textContent = text;
+  return t;
+}
+
+function selectedIps() {
+  return [...nicList.querySelectorAll('input[type=checkbox]:checked')].map(cb => cb.value);
+}
+
+function updateUsageSnippet() {
+  const ips = selectedIps();
+  const port = apiPort.value || 8080;
+  const key = apiKey.value;
+  if (!apiEnabled.checked || ips.length === 0) {
+    usageSnippet.textContent = 'Enable API access and select an interface to see usage.';
+    return;
+  }
+  const ip = ips.find(i => !i.startsWith('127.') && !i.startsWith('169.254.')) || ips[0];
+  const auth = key ? ` \\\n  -H "Authorization: Bearer ${key}"` : '';
+  usageSnippet.textContent =
+    `curl http://${ip}:${port}/v1/chat/completions \\\n` +
+    `  -H "Content-Type: application/json"${auth} \\\n` +
+    `  -d '{"messages":[{"role":"user","content":"hi"}],"stream":false}'`;
+}
+
+function updateWarnings() {
+  const ips = selectedIps();
+  const anyLan = ips.some(i => !i.startsWith('127.'));
+  lanWarn.style.display = (apiEnabled.checked && anyLan && !apiKey.value) ? '' : 'none';
+}
+
+apiEnabled.addEventListener('change', () => { updateUsageSnippet(); updateWarnings(); });
+apiPort.addEventListener('input', updateUsageSnippet);
+apiKey.addEventListener('input', () => { updateUsageSnippet(); updateWarnings(); });
+
+genKey.addEventListener('click', async () => {
+  const res = await fetch(MGR_API + '/api/generate_key', { method: 'POST' });
+  const data = await res.json();
+  apiKey.value = data.api_key;
+  updateUsageSnippet(); updateWarnings();
+});
+
+let modelPollTimer = null;
+
+function fmtBytes(n) {
+  if (!n) return '0 B';
+  const u = ['B', 'KB', 'MB', 'GB'];
+  let i = 0;
+  while (n >= 1024 && i < u.length - 1) { n /= 1024; i++; }
+  return n.toFixed(n >= 10 ? 0 : 1) + ' ' + u[i];
+}
+
+async function renderModelRows() {
+  try {
+    const res = await fetch(MGR_API + '/api/models');
+    const data = await res.json();
+    modelRows.innerHTML = '';
+    for (const [id, m] of Object.entries(data.models)) {
+      const row = document.createElement('div');
+      row.className = 'model-row';
+
+      const info = document.createElement('div');
+      info.className = 'mr-info';
+      const name = document.createElement('div');
+      name.className = 'mr-name';
+      name.textContent = m.label;
+      const meta = document.createElement('div');
+      meta.className = 'mr-meta';
+      meta.textContent = `${m.params} params · ${m.context} ctx`;
+      info.appendChild(name);
+      info.appendChild(meta);
+
+      const d = m.download || {};
+      if (d.status === 'downloading') {
+        const pct = d.total ? (d.done / d.total * 100) : 0;
+        const prog = document.createElement('div');
+        prog.className = 'progress';
+        const bar = document.createElement('div');
+        bar.className = 'bar';
+        bar.style.width = pct + '%';
+        prog.appendChild(bar);
+        info.appendChild(prog);
+        meta.textContent = `${fmtBytes(d.done)} / ${d.total ? fmtBytes(d.total) : '?'} (${pct.toFixed(1)}%)`;
+      } else if (d.status === 'error') {
+        meta.textContent = 'Error: ' + (d.error || 'download failed');
+      }
+
+      row.appendChild(info);
+
+      if (m.ready) {
+        if (m.active) {
+          const tag = document.createElement('span');
+          tag.className = 'mr-status';
+          tag.textContent = 'Active';
+          row.appendChild(tag);
+        } else {
+          const btn = document.createElement('button');
+          btn.className = 'btn secondary';
+          btn.textContent = 'Set active';
+          btn.onclick = async () => {
+            btn.disabled = true;
+            await switchModel(id);
+            renderModelRows();
+          };
+          row.appendChild(btn);
+        }
+      } else if (d.status === 'downloading') {
+        const btn = document.createElement('button');
+        btn.className = 'btn secondary';
+        btn.textContent = 'Cancel';
+        btn.onclick = async () => {
+          await fetch(MGR_API + '/api/download_cancel', {
+            method: 'POST', headers: {'Content-Type':'application/json'},
+            body: JSON.stringify({model: id}),
+          });
+        };
+        row.appendChild(btn);
+      } else if (m.downloadable) {
+        const btn = document.createElement('button');
+        btn.className = 'btn';
+        btn.textContent = 'Download';
+        btn.onclick = async () => {
+          await fetch(MGR_API + '/api/download', {
+            method: 'POST', headers: {'Content-Type':'application/json'},
+            body: JSON.stringify({model: id}),
+          });
+          renderModelRows();
+        };
+        row.appendChild(btn);
+      } else {
+        const tag = document.createElement('span');
+        tag.className = 'mr-status error';
+        tag.textContent = 'Manual install';
+        tag.title = m.manual_note || 'Not available for auto-download';
+        row.appendChild(tag);
+      }
+      modelRows.appendChild(row);
+    }
+  } catch {}
+}
+
+gearBtn.addEventListener('click', async () => {
+  await fetchSettings();
+  await renderModelRows();
+  settingsModal.classList.add('open');
+  modelPollTimer = setInterval(() => {
+    if (settingsModal.classList.contains('open')) renderModelRows();
+  }, 1000);
+});
+
+function closeModal() {
+  settingsModal.classList.remove('open');
+  if (modelPollTimer) { clearInterval(modelPollTimer); modelPollTimer = null; }
+  fetchModels();  // refresh header dropdown (maybe new models installed)
+}
+closeSettings.addEventListener('click', closeModal);
+settingsModal.addEventListener('click', (e) => {
+  if (e.target === settingsModal) closeModal();
+});
+
+saveSettingsBtn.addEventListener('click', async () => {
+  const payload = {
+    api_enabled: apiEnabled.checked,
+    api_port: parseInt(apiPort.value) || 8080,
+    api_key: apiKey.value,
+    allowed_ips: selectedIps(),
+  };
+  await fetch(MGR_API + '/api/settings', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(payload),
+  });
+  settingsModal.classList.remove('open');
+});
+
+
+// --- Chat ---
+
+function resetChat() {
+  const m = modelsData[currentModel];
+  const label = m ? m.label : 'BitNet';
+  chat.innerHTML = `
+    <div class="welcome">
+      <h2>${label}</h2>
+      <p>1-bit LLM running locally via BitNet.cpp<br>Type a message to start chatting.</p>
+    </div>`;
+}
+
+function addMessage(role, text) {
+  const welcome = chat.querySelector('.welcome');
+  if (welcome) welcome.remove();
+
+  const div = document.createElement('div');
+  div.className = `message ${role === 'user' ? 'user' : 'bot'}`;
+  div.innerHTML = `
+    <div class="avatar">${role === 'user' ? 'U' : 'B'}</div>
+    <div>
+      <div class="content"><span class="text"></span></div>
+      ${role !== 'user' ? '<div class="stats"></div>' : ''}
+    </div>
+  `;
+  chat.appendChild(div);
+  div.querySelector('.text').textContent = text;
+  chat.scrollTop = chat.scrollHeight;
+  return div;
+}
+
+form.addEventListener('submit', async (e) => {
+  e.preventDefault();
+  const text = input.value.trim();
+  if (!text || generating) return;
+
+  input.value = '';
+  input.style.height = 'auto';
+
+  messages.push({ role: 'user', content: text });
+  addMessage('user', text);
+
+  generating = true;
+  sendBtn.disabled = true;
+  statusDot.className = 'dot generating';
+  statusText.textContent = 'Generating...';
+
+  const botDiv = addMessage('bot', '');
+  const textSpan = botDiv.querySelector('.text');
+  const contentDiv = botDiv.querySelector('.content');
+  const statsDiv = botDiv.querySelector('.stats');
+
+  const cursor = document.createElement('span');
+  cursor.className = 'cursor';
+  contentDiv.appendChild(cursor);
+
+  let fullResponse = '';
+  const startTime = performance.now();
+  let tokenCount = 0;
+
+  try {
+    controller = new AbortController();
+    const res = await fetch(LLAMA_API + '/v1/chat/completions', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      signal: controller.signal,
+      body: JSON.stringify({
+        messages: messages,
+        stream: true,
+        temperature: 0.8,
+        max_tokens: 1024,
+      })
+    });
+
+    const reader = res.body.getReader();
+    const decoder = new TextDecoder();
+    let buffer = '';
+
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) break;
+
+      buffer += decoder.decode(value, { stream: true });
+      const lines = buffer.split('\n');
+      buffer = lines.pop();
+
+      for (const line of lines) {
+        if (!line.startsWith('data: ')) continue;
+        const data = line.slice(6);
+        if (data === '[DONE]') continue;
+
+        try {
+          const json = JSON.parse(data);
+          const delta = json.choices?.[0]?.delta?.content;
+          if (delta) {
+            fullResponse += delta;
+            tokenCount++;
+            textSpan.textContent = fullResponse;
+            chat.scrollTop = chat.scrollHeight;
+          }
+        } catch {}
+      }
+    }
+  } catch (err) {
+    if (err.name !== 'AbortError') {
+      fullResponse = '[Error: Could not reach the server]';
+      textSpan.textContent = fullResponse;
+    }
+  }
+
+  cursor.remove();
+
+  const elapsed = (performance.now() - startTime) / 1000;
+  if (tokenCount > 0) {
+    statsDiv.textContent = `${tokenCount} tokens | ${(tokenCount / elapsed).toFixed(1)} tok/s | ${elapsed.toFixed(1)}s`;
+  }
+
+  if (fullResponse) {
+    messages.push({ role: 'assistant', content: fullResponse });
+  }
+
+  generating = false;
+  sendBtn.disabled = false;
+  controller = null;
+  fetchModels();
+});
+
+clearBtn.addEventListener('click', () => {
+  if (controller) { controller.abort(); controller = null; }
+  messages = [];
+  generating = false;
+  sendBtn.disabled = false;
+  resetChat();
+  fetchModels();
+});
+
+// Init
+fetchModels();
+setInterval(fetchModels, 10000);
+</script>
+</body>
+</html>

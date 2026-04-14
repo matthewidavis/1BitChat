@@ -1,0 +1,38 @@
+# Build artifacts
+1BitChat.exe
+build_pyi/
+*.spec
+
+# Local-only helper scripts
+_make_zip.py
+
+# Runtime
+bnchat_settings.json
+*.part
+
+# Models (auto-downloaded by the app)
+models/
+
+# Trim build/bin/ to only runtime-needed binaries
+build/bin/*
+!build/bin/llama-server.exe
+!build/bin/llama.dll
+!build/bin/ggml.dll
+!build/bin/libomp.dll
+!build/bin/llava_shared.dll
+!build/bin/README.md
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+.venv/
+venv/
+
+# IDE / tooling
+.claude/
+.vscode/
+.idea/
+*.swp
+.DS_Store
+Thumbs.db
