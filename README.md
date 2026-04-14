@@ -37,24 +37,24 @@ Truly, we live in an age of wonders.
 
 ```
 ╭────────────────────────────────────────────────────────────────────╮
-│  MANUFACTURER    Claude & Matt, based on upstream works by        │
-│                  Microsoft Research and the llama.cpp community   │
+│  MANUFACTURER    Claude & Matt, based on upstream works by         │
+│                  Microsoft Research and the llama.cpp community    │
 │                                                                    │
-│  POWER           120V / 240V household current (via your PC)      │
-│                  0 (zero) graphics processors required            │
+│  POWER           120V / 240V household current (via your PC)       │
+│                  0 (zero) graphics processors required             │
 │                                                                    │
-│  MODEL INCLUDED  BitNet b1.58-2B-4T (2.4 billion parameters,      │
-│                  trained on 4 trillion tokens, ternary weights)   │
+│  MODEL INCLUDED  BitNet b1.58-2B-4T (2.4 billion parameters,       │
+│                  trained on 4 trillion tokens, ternary weights)    │
 │                                                                    │
 │  OPTIONAL        Falcon3-10B-Instruct-1.58bit — available via      │
-│  EXPANSION PACK  the in-program Settings Panel (4 GB download)    │
+│  EXPANSION PACK  the in-program Settings Panel (4 GB download)     │
 │                                                                    │
-│  CONTEXT WINDOW  4,096 tokens (base) / 32,768 tokens (Falcon)     │
+│  CONTEXT WINDOW  4,096 tokens (base) / 32,768 tokens (Falcon)      │
 │                                                                    │
-│  HOST SYSTEM     IBM PC-compatible running Microsoft Windows      │
-│                  (version 10 or 11; XP sadly no longer supported) │
+│  HOST SYSTEM     IBM PC-compatible running Microsoft Windows       │
+│                  (version 10 or 11; XP sadly no longer supported)  │
 │                                                                    │
-│  INSTALLATION    None required. Unzip. Double-click. Commence.    │
+│  INSTALLATION    None required. Unzip. Double-click. Commence.     │
 ╰────────────────────────────────────────────────────────────────────╯
 ```
 
@@ -74,9 +74,9 @@ location on your fixed disk. A folder named `1BitChat` will be produced.
   ┌─────────────────────────────────────────────────────────┐
   │  File  Actions  Options  Help                           │
   │  ┌──────────────────────────────────────────────────┐   │
-  │  │ Extracting: 1BitChat.zip                           │   │
+  │  │ Extracting: 1BitChat.zip                         │   │
   │  │ ████████████████████████████████████  100%       │   │
-  │  │ 47 files extracted to C:\1BitChat\                 │   │
+  │  │ 47 files extracted to C:\1BitChat\               │   │
   │  └──────────────────────────────────────────────────┘   │
   └─────────────────────────────────────────────────────────┘
 ```
@@ -123,8 +123,8 @@ from which all configuration is accomplished.
 
 ```
    ┌──────────────────────────────────────────────────────┐
-   │ 1BitChat       [BitNet b1.58-2B-4T] [ctx: 4096]       │
-   │                              ● Online       [⚙]    │
+   │ 1BitChat       [BitNet b1.58-2B-4T] [ctx: 4096]      │
+   │                              ● Online       [⚙]     │
    ╞══════════════════════════════════════════════════════╡
    │                                                      │
    │   (chat area)                                        │
@@ -199,7 +199,7 @@ modification, except for the Base URL.
 
 ```
                   ┌──────────────────────────────────┐
-                  │          1BitChat.exe              │
+                  │          1BitChat.exe            │
                   │  (Python, pywebview, 17 MB)      │
                   │                                  │
                   │  ┌─────────────────────────────┐ │
